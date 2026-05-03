@@ -1,0 +1,5 @@
+Table: Employees
+Columns: emp_id, name, department, salary
+
+Table: Sales
+Columns: sale_id, emp_id, amount, date
