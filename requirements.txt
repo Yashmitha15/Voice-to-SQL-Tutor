@@ -1,6 +1,11 @@
+streamlit
 fastapi
 uvicorn
-streamlit
-langchain
+requests
+audio-recorder-streamlit
+speech-recognition
+langchain-google-genai
 langchain-community
+langchain-huggingface
+faiss-cpu
 python-dotenv
