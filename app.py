@@ -22,13 +22,14 @@ st.markdown("""
 
 # --- 2. AI BACKEND SETUP ---
 api_key = st.secrets["GOOGLE_API_KEY"]
-llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
+
+# FIX: Added 'models/' prefix to avoid the 404 NOT_FOUND error
+llm = ChatGoogleGenerativeAI(model="models/gemini-1.5-flash", google_api_key=api_key)
 
 @st.cache_resource
 def load_db():
     embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
     if os.path.exists("faiss_index"):
-        # Local loading with dangerous_deserialization allowed for FAISS
         return FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
     return None
 
@@ -39,7 +40,6 @@ def process_audio(audio_bytes):
     r = sr.Recognizer()
     try:
         with sr.AudioFile(BytesIO(audio_bytes)) as source:
-            # Adjust for cloud-based audio processing
             r.adjust_for_ambient_noise(source, duration=0.2)
             audio = r.record(source)
         return r.recognize_google(audio)
@@ -78,10 +78,9 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# --- 6. IMPROVED INPUT HANDLING ---
+# --- 6. INPUT HANDLING ---
 text_prompt = st.chat_input("Ask about your database...")
 
-# Decide which input to use
 final_prompt = None
 if voice_prompt:
     final_prompt = voice_prompt
@@ -95,13 +94,12 @@ if final_prompt:
 
     with st.chat_message("assistant"):
         if vector_db:
-            # RAG: Retrieve context from FAISS
             docs = vector_db.similarity_search(final_prompt, k=1)
             context = docs[0].page_content
             
             template = """
             You are an expert SQL Tutor. 
-            Context (Database Schema): {context}
+            Context: {context}
             
             Question: {question}
             
@@ -112,7 +110,7 @@ if final_prompt:
             ```
             
             ### 💡 Explanation
-            [1-2 sentences explaining the SQL logic]
+            [Explanation logic]
             
             ### 📊 Sample Result Table
             | name | department | salary |
@@ -128,6 +126,7 @@ if final_prompt:
                 st.markdown(response.content)
                 st.session_state.messages.append({"role": "assistant", "content": response.content})
             except Exception as e:
-                st.error(f"AI Connection Error: {str(e)}")
+                # Better error messaging for debugging
+                st.error(f"AI Error: {str(e)}")
         else:
-            st.error("Database schema (faiss_index) missing on GitHub!")
+            st.error("Database schema (faiss_index) missing!")
