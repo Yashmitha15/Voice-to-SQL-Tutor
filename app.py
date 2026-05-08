@@ -23,8 +23,12 @@ st.markdown("""
 # --- 2. AI BACKEND SETUP ---
 api_key = st.secrets["GOOGLE_API_KEY"]
 
-# FIX: Added 'models/' prefix to avoid the 404 NOT_FOUND error
-llm = ChatGoogleGenerativeAI(model="models/gemini-1.5-flash", google_api_key=api_key)
+# FIX: Using 'gemini-1.5-flash-latest' to resolve the 404 NOT_FOUND issue
+llm = ChatGoogleGenerativeAI(
+    model="gemini-1.5-flash-latest", 
+    google_api_key=api_key,
+    temperature=0
+)
 
 @st.cache_resource
 def load_db():
@@ -110,7 +114,7 @@ if final_prompt:
             ```
             
             ### 💡 Explanation
-            [Explanation logic]
+            [1-2 sentences explaining the logic]
             
             ### 📊 Sample Result Table
             | name | department | salary |
@@ -126,7 +130,7 @@ if final_prompt:
                 st.markdown(response.content)
                 st.session_state.messages.append({"role": "assistant", "content": response.content})
             except Exception as e:
-                # Better error messaging for debugging
-                st.error(f"AI Error: {str(e)}")
+                st.error(f"AI Connection Error: {str(e)}")
+                st.info("Try checking your GOOGLE_API_KEY in Streamlit Secrets.")
         else:
             st.error("Database schema (faiss_index) missing!")
