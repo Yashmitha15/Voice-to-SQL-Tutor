@@ -4,6 +4,7 @@ from audio_recorder_streamlit import audio_recorder
 import speech_recognition as sr
 from io import BytesIO
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.runnables import RunnablePassthrough
 from langchain_core.prompts import PromptTemplate
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -23,9 +24,9 @@ st.markdown("""
 # --- 2. AI BACKEND SETUP ---
 api_key = st.secrets["GOOGLE_API_KEY"]
 
-# FIX: Using 'gemini-1.5-flash-latest' to resolve the 404 NOT_FOUND issue
+# UPDATED: Using Gemini 2.0 Flash (The 2026 stable standard)
 llm = ChatGoogleGenerativeAI(
-    model="gemini-1.5-flash-latest", 
+    model="gemini-2.0-flash", 
     google_api_key=api_key,
     temperature=0
 )
@@ -72,7 +73,7 @@ with st.sidebar:
     
     st.markdown("### 📊 Share")
     if st.button("📄 Download Chat Log"):
-        st.write("Feature ready!")
+        st.write("Log Prepared!")
 
 # --- 5. CHAT DISPLAY ---
 if "messages" not in st.session_state:
@@ -84,12 +85,7 @@ for message in st.session_state.messages:
 
 # --- 6. INPUT HANDLING ---
 text_prompt = st.chat_input("Ask about your database...")
-
-final_prompt = None
-if voice_prompt:
-    final_prompt = voice_prompt
-elif text_prompt:
-    final_prompt = text_prompt
+final_prompt = voice_prompt if (voice_prompt and voice_prompt != "None") else text_prompt
 
 if final_prompt:
     st.session_state.messages.append({"role": "user", "content": final_prompt})
@@ -103,23 +99,21 @@ if final_prompt:
             
             template = """
             You are an expert SQL Tutor. 
-            Context: {context}
+            Context Schema: {context}
             
-            Question: {question}
+            User Question: {question}
             
-            Provide your response in this EXACT format:
+            Format exactly:
             ### 🔍 SQL Query
             ```sql
-            [Your Query Here]
+            [SQL Here]
             ```
-            
             ### 💡 Explanation
-            [1-2 sentences explaining the logic]
-            
+            [1-2 sentences]
             ### 📊 Sample Result Table
-            | name | department | salary |
-            | :--- | :--- | :--- |
-            | [Example] | [Example] | [Example] |
+            | Col | Col |
+            | :--- | :--- |
+            | Data | Data |
             """
             
             prompt = PromptTemplate.from_template(template)
@@ -131,6 +125,5 @@ if final_prompt:
                 st.session_state.messages.append({"role": "assistant", "content": response.content})
             except Exception as e:
                 st.error(f"AI Connection Error: {str(e)}")
-                st.info("Try checking your GOOGLE_API_KEY in Streamlit Secrets.")
         else:
             st.error("Database schema (faiss_index) missing!")

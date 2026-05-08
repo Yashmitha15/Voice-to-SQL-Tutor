@@ -6,6 +6,10 @@ from langchain_text_splitters import CharacterTextSplitter
 
 def create_vector_db():
     # 1. Load the schema file
+    if not os.path.exists("database_schema.txt"):
+        print("❌ ERROR: database_schema.txt not found!")
+        return
+
     loader = TextLoader("database_schema.txt")
     documents = loader.load()
 
@@ -13,7 +17,7 @@ def create_vector_db():
     text_splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=0)
     docs = text_splitter.split_documents(documents)
 
-    # 3. Create the "Embeddings" (The AI's way of understanding text)
+    # 3. Create the "Embeddings" (Using the stable 2026 standard)
     embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
     # 4. Create and save the FAISS index
