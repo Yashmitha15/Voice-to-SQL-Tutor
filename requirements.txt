@@ -3,7 +3,8 @@ fastapi
 uvicorn
 requests
 audio-recorder-streamlit
-speech-recognition
+SpeechRecognition
+pydub
 langchain-google-genai
 langchain-community
 langchain-huggingface
