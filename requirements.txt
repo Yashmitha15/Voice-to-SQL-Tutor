@@ -1,6 +1,4 @@
 streamlit
-fastapi
-uvicorn
 requests
 audio-recorder-streamlit
 SpeechRecognition
@@ -8,5 +6,6 @@ pydub
 langchain-google-genai
 langchain-community
 langchain-huggingface
+sentence-transformers
 faiss-cpu
 python-dotenv
