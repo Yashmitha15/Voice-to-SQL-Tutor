@@ -7,5 +7,7 @@ langchain-google-genai
 langchain-community
 langchain-huggingface
 sentence-transformers
+torch
+torchvision
 faiss-cpu
 python-dotenv
