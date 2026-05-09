@@ -1,13 +1,27 @@
-streamlit
-requests
-audio-recorder-streamlit
-SpeechRecognition
-pydub
-langchain-google-genai
-langchain-community
-langchain-huggingface
-sentence-transformers
-torch
-torchvision
-faiss-cpu
-python-dotenv
+# --- Core Frameworks ---
+streamlit>=1.32.0
+fastapi>=0.110.0
+requests>=2.31.0
+
+# --- Audio & Speech ---
+audio-recorder-streamlit>=0.0.8
+SpeechRecognition>=3.10.0
+pydub>=0.25.1
+
+# --- LangChain Ecosystem ---
+langchain>=0.1.16
+langchain-community>=0.0.32
+langchain-huggingface>=0.0.21
+langchain-google-genai>=0.0.9
+langchain-groq>=0.0.5
+
+# --- Embeddings & Models ---
+sentence-transformers>=2.6.1
+torch>=2.2.2
+torchvision>=0.17.2
+
+# --- Vector DB ---
+faiss-cpu>=1.8.0
+
+# --- Utilities ---
+python-dotenv>=1.0.1

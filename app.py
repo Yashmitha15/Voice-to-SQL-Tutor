@@ -3,8 +3,7 @@ import os
 from audio_recorder_streamlit import audio_recorder
 import speech_recognition as sr
 from io import BytesIO
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.runnables import RunnablePassthrough
+from langchain_groq import ChatGroq 
 from langchain_core.prompts import PromptTemplate
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -21,13 +20,12 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. AI BACKEND SETUP ---
-api_key = st.secrets["GOOGLE_API_KEY"]
+# --- 2. AI BACKEND SETUP (GROQ) ---
+groq_key = st.secrets["GROQ_API_KEY"]
 
-# UPDATED: Using Gemini 2.0 Flash (The 2026 stable standard)
-llm = ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash", 
-    google_api_key=api_key,
+llm = ChatGroq(
+    model="llama-3.3-70b-versatile", 
+    groq_api_key=groq_key,
     temperature=0
 )
 
@@ -95,8 +93,8 @@ if final_prompt:
     with st.chat_message("assistant"):
         if vector_db:
             docs = vector_db.similarity_search(final_prompt, k=1)
-            context = docs[0].page_content
-            
+            context = docs[0].page_content if docs else "No schema context found."
+
             template = """
             You are an expert SQL Tutor. 
             Context Schema: {context}
@@ -115,10 +113,10 @@ if final_prompt:
             | :--- | :--- |
             | Data | Data |
             """
-            
+
             prompt = PromptTemplate.from_template(template)
             chain = prompt | llm
-            
+
             try:
                 response = chain.invoke({"context": context, "question": final_prompt})
                 st.markdown(response.content)
@@ -126,4 +124,4 @@ if final_prompt:
             except Exception as e:
                 st.error(f"AI Connection Error: {str(e)}")
         else:
-            st.error("Database schema (faiss_index) missing!")
+            st.error("⚠️ Database schema (faiss_index) missing! Please build or load your FAISS index.")
