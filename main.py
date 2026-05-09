@@ -13,7 +13,7 @@ app = FastAPI()
 
 # UPDATED: Using Gemini 2.0 Flash
 llm = ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash", 
+    model="gemini-1.5-flash", 
     google_api_key=api_key
 )
 
