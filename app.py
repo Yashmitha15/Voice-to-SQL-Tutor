@@ -21,7 +21,10 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- 2. AI BACKEND SETUP (GROQ) ---
-groq_key = st.secrets["GROQ_API_KEY"]
+groq_key = st.secrets.get("GROQ_API_KEY", None)
+if not groq_key:
+    st.error("⚠️ Missing GROQ_API_KEY in Streamlit Secrets. Please add it in Settings → Secrets.")
+    st.stop()
 
 llm = ChatGroq(
     model="llama-3.3-70b-versatile", 
@@ -29,16 +32,25 @@ llm = ChatGroq(
     temperature=0
 )
 
+# --- 3. FAISS INDEX LOADER/BUILDER ---
 @st.cache_resource
 def load_db():
     embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
     if os.path.exists("faiss_index"):
         return FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
-    return None
+    else:
+        # Auto-build FAISS if missing
+        try:
+            from ingest import create_vector_db   # make sure ingest.py has this function
+            create_vector_db()
+            return FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
+        except Exception as e:
+            st.error(f"⚠️ Could not build FAISS index: {str(e)}")
+            return None
 
 vector_db = load_db()
 
-# --- 3. AUDIO PROCESSING ---
+# --- 4. AUDIO PROCESSING ---
 def process_audio(audio_bytes):
     r = sr.Recognizer()
     try:
@@ -49,7 +61,7 @@ def process_audio(audio_bytes):
     except Exception:
         return None
 
-# --- 4. SIDEBAR ---
+# --- 5. SIDEBAR ---
 with st.sidebar:
     st.markdown("## ✨ AI Features")
     st.markdown("### 🎙️ Voice Query")
@@ -73,7 +85,7 @@ with st.sidebar:
     if st.button("📄 Download Chat Log"):
         st.write("Log Prepared!")
 
-# --- 5. CHAT DISPLAY ---
+# --- 6. CHAT DISPLAY ---
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -81,7 +93,7 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# --- 6. INPUT HANDLING ---
+# --- 7. INPUT HANDLING ---
 text_prompt = st.chat_input("Ask about your database...")
 final_prompt = voice_prompt if (voice_prompt and voice_prompt != "None") else text_prompt
 
