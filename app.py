@@ -32,19 +32,20 @@ llm = ChatGroq(
     temperature=0
 )
 
-# --- 3. FAISS INDEX LOADER ---
+# --- 3. FAISS INDEX LOADER/BUILDER ---
 @st.cache_resource
 def load_db():
     embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
     if os.path.exists("faiss_index"):
         return FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
     else:
-        # Attempt to auto-build if ingest.py exists
+        # Auto-build FAISS if missing
         try:
-            from ingest import create_vector_db
+            from ingest import create_vector_db   # make sure ingest.py has this function
             create_vector_db()
             return FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
         except Exception as e:
+            st.error(f"⚠️ Could not build FAISS index: {str(e)}")
             return None
 
 vector_db = load_db()
@@ -79,6 +80,10 @@ with st.sidebar:
     if st.button("🗑️ Clear Chat"):
         st.session_state.messages = []
         st.rerun()
+    
+    st.markdown("### 📊 Share")
+    if st.button("📄 Download Chat Log"):
+        st.write("Log Prepared!")
 
 # --- 6. CHAT DISPLAY ---
 if "messages" not in st.session_state:
@@ -88,33 +93,17 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# --- 7. INPUT HANDLING & SECURITY ---
+# --- 7. INPUT HANDLING ---
 text_prompt = st.chat_input("Ask about your database...")
 final_prompt = voice_prompt if (voice_prompt and voice_prompt != "None") else text_prompt
 
 if final_prompt:
-    # 1. Show User Message
     st.session_state.messages.append({"role": "user", "content": final_prompt})
     with st.chat_message("user"):
         st.markdown(final_prompt)
 
     with st.chat_message("assistant"):
-        # --- SECURITY FILTER (Moved from main.py) ---
-        forbidden_words = ["drop", "delete", "truncate", "update", "alter"]
-        
-        if any(word in final_prompt.lower() for word in forbidden_words):
-            error_msg = "🚫 **Security Block**: Read-Only access only. Destructive commands like DROP or DELETE are not allowed."
-            st.warning(error_msg)
-            st.session_state.messages.append({"role": "assistant", "content": error_msg})
-
-        # --- DATABASE CHECK ---
-        elif vector_db is None:
-            error_msg = "⚠️ **Error**: Database schema (faiss_index) missing! Please run ingestion first."
-            st.error(error_msg)
-            st.session_state.messages.append({"role": "assistant", "content": error_msg})
-
-        # --- AI GENERATION ---
-        else:
+        if vector_db:
             docs = vector_db.similarity_search(final_prompt, k=1)
             context = docs[0].page_content if docs else "No schema context found."
 
@@ -137,13 +126,14 @@ if final_prompt:
             | Data | Data |
             """
 
-            prompt_template = PromptTemplate.from_template(template)
-            chain = prompt_template | llm
+            prompt = PromptTemplate.from_template(template)
+            chain = prompt | llm
 
             try:
-                with st.spinner("AI is thinking..."):
-                    response = chain.invoke({"context": context, "question": final_prompt})
-                    st.markdown(response.content)
-                    st.session_state.messages.append({"role": "assistant", "content": response.content})
+                response = chain.invoke({"context": context, "question": final_prompt})
+                st.markdown(response.content)
+                st.session_state.messages.append({"role": "assistant", "content": response.content})
             except Exception as e:
                 st.error(f"AI Connection Error: {str(e)}")
+        else:
+            st.error("⚠️ Database schema (faiss_index) missing! Please build or load your FAISS index.")
