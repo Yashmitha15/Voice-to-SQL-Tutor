@@ -1,0 +1,5 @@
+Table: Employees
+Columns: emp_id (INT), name (TEXT), department (TEXT), salary (INT)
+
+Table: Sales
+Columns: sale_id (INT), emp_id (INT), amount (INT), date (DATE)
