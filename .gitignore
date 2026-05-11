@@ -1,30 +1,24 @@
 # --- Private Secrets ---
-# This hides your Groq and Google API keys
+# Keep these hidden!
 .env
+.streamlit/secrets.toml
 
 # --- Virtual Environments ---
-# Hides your local Python environment folders
 venv/
 env/
 .venv/
 
 # --- Python Cache ---
-# Hides temporary files created when you run Python
 __pycache__/
 *.py[cod]
 *$py.class
 
-# --- Database & Project Specific ---
-# Hides your database schema and vector index from being public
-faiss_index/
-database_schema.txt
-*.log
-
 # --- OS-specific files ---
-# Hides system files created by Windows or Mac
 .DS_Store
 Thumbs.db
 
-# --- Streamlit ---
-# Hides Streamlit's local configuration
-.streamlit/secrets.toml
+# --- Logs ---
+*.log
+
+# NOTE: faiss_index/ is REMOVED from here 
+# so it can be uploaded to GitHub for Streamlit to use.
