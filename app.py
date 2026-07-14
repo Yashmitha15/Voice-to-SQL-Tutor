@@ -33,20 +33,41 @@ llm = ChatGroq(
 )
 
 # --- 3. FAISS INDEX LOADER/BUILDER ---
+# @st.cache_resource
+# def load_db():
+#     embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+#     if os.path.exists("faiss_index"):
+#         return FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
+#     else:
+#         # Auto-build FAISS if missing
+#         try:
+#             from ingest import create_vector_db   # make sure ingest.py has this function
+#             create_vector_db()
+#             return FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
+#         except Exception as e:
+#             st.error(f"⚠️ Could not build FAISS index: {str(e)}")
+#             return None
+
+# vector_db = load_db()
+@st.cache_resource
+def get_embeddings():
+    # Caches the model separately so it doesn't freeze the DB load
+    return HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+
 @st.cache_resource
 def load_db():
-    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-    if os.path.exists("faiss_index"):
-        return FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
-    else:
-        # Auto-build FAISS if missing
-        try:
-            from ingest import create_vector_db   # make sure ingest.py has this function
+    try:
+        embeddings = get_embeddings()
+        if os.path.exists("faiss_index"):
+            return FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
+        else:
+            # Auto-build FAISS if missing
+            from ingest import create_vector_db   
             create_vector_db()
             return FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
-        except Exception as e:
-            st.error(f"⚠️ Could not build FAISS index: {str(e)}")
-            return None
+    except Exception as e:
+        st.error(f"⚠️ Could not build or load FAISS index: {str(e)}")
+        return None
 
 vector_db = load_db()
 
