@@ -26,9 +26,8 @@ if not groq_key:
     st.error(" Missing GROQ_API_KEY in Streamlit Secrets. Please add it in Settings → Secrets.")
     st.stop()
 
-# ✅ Updated Line 21:
 llm = ChatGroq(
-    model="llama-3.1-70b-versatile", 
+    model="llama-3.1-8b-instant",
     groq_api_key=groq_key,
     temperature=0
 )
