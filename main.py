@@ -19,16 +19,16 @@ llm = ChatGoogleGenerativeAI(
     temperature=0
 )
 
-# --- 3. VECTOR DB SETUP ---
-print("⏳ Initializing Vector Database...")
+# --- VECTOR DB SETUP ---
+print(" Initializing Vector Database...")
 embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
 if os.path.exists("faiss_index"):
     vector_db = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
-    print("✅ System Ready.")
+    print(" System Ready.")
 else:
     vector_db = None
-    print("❌ ERROR: faiss_index not found.")
+    print(" ERROR: faiss_index not found.")
 
 # --- 4. ROUTE: SQL GENERATION ---
 @app.get("/generate-sql")
@@ -37,7 +37,7 @@ def generate(question: str):
         # Security filter: block destructive queries
         forbidden_words = ["drop", "delete", "truncate", "update", "alter"]
         if any(word in question.lower() for word in forbidden_words):
-            return {"answer": "🚫 **Security Block**: Read-Only access only."}
+            return {"answer": " **Security Block**: Read-Only access only."}
 
         if vector_db is None:
             return {"answer": "Error: Vector database not loaded."}
@@ -53,13 +53,13 @@ def generate(question: str):
         User Question: {question}
 
         Format exactly:
-        ### 🔍 SQL Query
+        ###  SQL Query
         ```sql
         [SQL]
         ```
-        ### 💡 Explanation
+        ###  Explanation
         [1-2 sentences]
-        ### 📊 Sample Result Table
+        ###  Sample Result Table
         | Col | Col |
         | :--- | :--- |
         | Data | Data |

@@ -23,11 +23,12 @@ st.markdown("""
 # --- 2. AI BACKEND SETUP (GROQ) ---
 groq_key = st.secrets.get("GROQ_API_KEY", None)
 if not groq_key:
-    st.error("⚠️ Missing GROQ_API_KEY in Streamlit Secrets. Please add it in Settings → Secrets.")
+    st.error(" Missing GROQ_API_KEY in Streamlit Secrets. Please add it in Settings → Secrets.")
     st.stop()
 
+# ✅ Updated Line 21:
 llm = ChatGroq(
-    model="llama-3.3-70b-versatile", 
+    model="llama-3.1-70b-versatile", 
     groq_api_key=groq_key,
     temperature=0
 )
@@ -45,7 +46,7 @@ llm = ChatGroq(
 #             create_vector_db()
 #             return FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
 #         except Exception as e:
-#             st.error(f"⚠️ Could not build FAISS index: {str(e)}")
+#             st.error(f" Could not build FAISS index: {str(e)}")
 #             return None
 
 # vector_db = load_db()
@@ -66,7 +67,7 @@ def load_db():
             create_vector_db()
             return FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
     except Exception as e:
-        st.error(f"⚠️ Could not build or load FAISS index: {str(e)}")
+        st.error(f" Could not build or load FAISS index: {str(e)}")
         return None
 
 vector_db = load_db()
@@ -84,8 +85,8 @@ def process_audio(audio_bytes):
 
 # --- 5. SIDEBAR ---
 with st.sidebar:
-    st.markdown("## ✨ AI Features")
-    st.markdown("### 🎙️ Voice Query")
+    st.markdown("##  AI Features")
+    st.markdown("###  Voice Query")
     st.info("Tip: Click, speak, then click again to stop.")
     
     audio_bytes = audio_recorder(text="Click to speak", icon_size="2x", neutral_color="#6aa36f")
@@ -102,7 +103,7 @@ with st.sidebar:
         st.session_state.messages = []
         st.rerun()
     
-    st.markdown("### 📊 Share")
+    st.markdown("###  Share")
     if st.button("📄 Download Chat Log"):
         st.write("Log Prepared!")
 
@@ -135,13 +136,13 @@ if final_prompt:
             User Question: {question}
             
             Format exactly:
-            ### 🔍 SQL Query
+            ###  SQL Query
             ```sql
             [SQL Here]
             ```
-            ### 💡 Explanation
+            ###  Explanation
             [1-2 sentences]
-            ### 📊 Sample Result Table
+            ###  Sample Result Table
             | Col | Col |
             | :--- | :--- |
             | Data | Data |
@@ -157,4 +158,4 @@ if final_prompt:
             except Exception as e:
                 st.error(f"AI Connection Error: {str(e)}")
         else:
-            st.error("⚠️ Database schema (faiss_index) missing! Please build or load your FAISS index.")
+            st.error(" Database schema (faiss_index) missing! Please build or load your FAISS index.")
