@@ -35,13 +35,25 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. API KEY SETUP ---
-env_groq_key = os.getenv("GROQ_API_KEY", "")
-if not env_groq_key and hasattr(st, "secrets"):
+# --- 2. SECURE BACKEND API KEY RESOLUTION ---
+# Loaded securely from .env locally or Streamlit Cloud Secrets online (never exposed in UI)
+groq_key = os.getenv("GROQ_API_KEY")
+if not groq_key and hasattr(st, "secrets"):
     try:
-        env_groq_key = st.secrets.get("GROQ_API_KEY", "")
+        groq_key = st.secrets.get("GROQ_API_KEY", None)
     except Exception:
-        env_groq_key = ""
+        groq_key = None
+
+if not groq_key:
+    st.error("⚠️ Application configuration error: AI Service Key not configured. (Please check `.env` or Streamlit Secrets).")
+    st.stop()
+
+# Initialize LLM securely
+llm = ChatGroq(
+    model="openai/gpt-oss-20b",
+    groq_api_key=groq_key,
+    temperature=0
+)
 
 # --- 3. FAISS INDEX LOADER/BUILDER ---
 @st.cache_resource
@@ -90,19 +102,6 @@ def process_audio(audio_bytes):
 
 # --- 5. SIDEBAR ---
 with st.sidebar:
-    st.markdown("## ⚙️ Settings")
-    groq_api_key_input = st.text_input(
-        "Groq API Key",
-        value=env_groq_key,
-        type="password",
-        placeholder="gsk_...",
-        help="Get your free API key at https://console.groq.com/keys"
-    )
-    
-    if not groq_api_key_input:
-        st.info("💡 [Get a free Groq API Key](https://console.groq.com/keys)")
-
-    st.markdown("---")
     st.markdown("## 🎙️ AI Features")
     st.markdown("### Voice Query")
     st.info("Tip: Click, speak, then click again to stop.")
@@ -138,9 +137,6 @@ with st.sidebar:
             mime="text/plain"
         )
 
-# Check active API Key
-active_groq_key = groq_api_key_input.strip() if groq_api_key_input else None
-
 # --- 6. CHAT DISPLAY ---
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -159,21 +155,11 @@ if final_prompt:
         st.markdown(final_prompt)
 
     with st.chat_message("assistant"):
-        if not active_groq_key:
-            error_msg = "⚠️ **Missing or Invalid API Key**: Please enter a valid Groq API Key in the sidebar or `.env` / Streamlit Secrets. You can create one for free at [console.groq.com/keys](https://console.groq.com/keys)."
-            st.warning(error_msg)
-            st.session_state.messages.append({"role": "assistant", "content": error_msg})
-        elif not vector_db:
+        if not vector_db:
             st.error("❌ Database schema (faiss_index) missing! Please build or load your FAISS index.")
         else:
             with st.spinner("Thinking..."):
                 try:
-                    llm = ChatGroq(
-                        model="openai/gpt-oss-20b",
-                        groq_api_key=active_groq_key,
-                        temperature=0
-                    )
-
                     docs = vector_db.similarity_search(final_prompt, k=1)
                     context = docs[0].page_content if docs else "No schema context found."
 
@@ -205,7 +191,7 @@ Format your response exactly as follows:
                 except Exception as e:
                     err_str = str(e)
                     if "401" in err_str or "invalid_api_key" in err_str.lower() or "Invalid API Key" in err_str:
-                        error_msg = "❌ **Invalid API Key (Error 401)**: Your Groq API key is invalid or has expired/been revoked. Please create a new key at [console.groq.com/keys](https://console.groq.com/keys) and enter it in the sidebar or update your `.env` / Streamlit Secrets."
+                        error_msg = "❌ **AI Authentication Error**: The configured API Key is invalid or expired. Please update it in Streamlit Cloud Secrets or `.env`."
                     else:
                         error_msg = f"AI Error: {err_str}"
                     st.error(error_msg)
