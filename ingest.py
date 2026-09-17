@@ -1,8 +1,21 @@
 import os
+import sys
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import CharacterTextSplitter
+
+# Ensure UTF-8 output on Windows console
+if sys.stdout and hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+if sys.stderr and hasattr(sys.stderr, "reconfigure"):
+    try:
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 
 def create_vector_db(schema_file: str = "database_schema.txt", index_dir: str = "faiss_index"):
     """
@@ -13,11 +26,11 @@ def create_vector_db(schema_file: str = "database_schema.txt", index_dir: str = 
     """
     # 1. Load the schema file
     if not os.path.exists(schema_file):
-        print(f" ERROR: {schema_file} not found!")
+        print(f"❌ ERROR: {schema_file} not found!")
         return
 
     print(f"📂 Loading schema from: {schema_file}")
-    loader = TextLoader(schema_file)
+    loader = TextLoader(schema_file, encoding="utf-8")
     documents = loader.load()
 
     # 2. Split the text into small chunks
